@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armenian Typing Practice</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Armenian Typing Practice</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="typingTest">Typing Test</div>
+            <div class="tab" data-tab="progressivePractice">Progressive Practice</div>
+            <div class="tab" data-tab="settings">Settings</div>
+        </div>
+        
+        <!-- Typing Test Section -->
+        <div id="typingTest" class="content active">
+            <h2>Typing Test</h2>
+            
+            <div class="options-panel">
+                <div class="option-group">
+                    <label for="wordCount">Word Count:</label>
+                    <input type="number" id="wordCount" min="1" max="20" value="10">
+                </div>
+                <div class="option-group">
+                    <input type="checkbox" id="lowercaseOption">
+                    <label for="lowercaseOption">Lowercase Only</label>
+                </div>
+            </div>
+            
+            <div id="textToType"></div>
+            <input type="text" id="typingInput" placeholder="Start typing here..." autocomplete="off">
+            <button id="newTestBtn" class="button">New Test</button>
+            <button id="resetTestBtn" class="button">Reset</button>
+            
+            <div class="metrics">
+                <div class="metric">
+                    <h3>WPM</h3>
+                    <p id="wpm">0</p>
+                </div>
+                <div class="metric">
+                    <h3>Accuracy</h3>
+                    <p id="accuracy">0%</p>
+                </div>
+                <div class="metric">
+                    <h3>Time</h3>
+                    <p id="time">0s</p>
+                </div>
+            </div>
+            
+            <div class="keyboard-container">
+                <p class="keyboard-title">Western Armenian Legacy Keyboard Layout</p>
+            <div class="keyboard">
+                    <div class="keyboard-row">
+                        <div class="key" data-char="՝">՝</div>
+                        <div class="key" data-char=":">:</div>
+                        <div class="key" data-char="ձ">ձ</div>
+                        <div class="key" data-char="յ">յ</div>
+                        <div class="key" data-char="՛">՛</div>
+                        <div class="key" data-char=",">,</div>
+                        <div class="key" data-char="-">-</div>
+                        <div class="key" data-char=".">.</div>
+                        <div class="key" data-char="«">«</div>
+                        <div class="key" data-char="»">»</div>
+                        <div class="key" data-char="օ">օ</div>
+                        <div class="key" data-char="ռ">ռ</div>
+                        <div class="key" data-char="ժ">ժ</div>
+                    </div>
+                    <div class="keyboard-row">
+                        <div class="key" data-char="խ">խ</div>
+                        <div class="key" data-char="վ">վ</div>
+                        <div class="key" data-char="է">է</div>
+                        <div class="key" data-char="ր">ր</div>
+                        <div class="key" data-char="դ">դ</div>
+                        <div class="key" data-char="ե">ե</div>
+                        <div class="key" data-char="ը">ը</div>
+                        <div class="key" data-char="ի">ի</div>
+                        <div class="key" data-char="ո">ո</div>
+                        <div class="key" data-char="բ">բ</div>
+                        <div class="key" data-char="չ">չ</div>
+                        <div class="key" data-char="ջ">ջ</div>
+                    </div>
+                    <div class="keyboard-row">
+                        <div class="key home-row" data-char="ա">ա</div>
+                        <div class="key home-row" data-char="ս">ս</div>
+                        <div class="key home-row" data-char="տ">տ</div>
+                        <div class="key home-row" data-char="ֆ">ֆ</div>
+                        <div class="key home-row" data-char="կ">կ</div>
+                        <div class="key home-row" data-char="հ">հ</div>
+                        <div class="key home-row" data-char="ճ">ճ</div>
+                        <div class="key home-row" data-char="ք">ք</div>
+                        <div class="key home-row" data-char="լ">լ</div>
+                        <div class="key home-row" data-char="թ">թ</div>
+                        <div class="key" data-char="փ">փ</div>
+                    </div>
+                    <div class="keyboard-row">
+                        <div class="key" data-char="զ">զ</div>
+                        <div class="key" data-char="ց">ց</div>
+                        <div class="key" data-char="գ">գ</div>
+                        <div class="key" data-char="ւ">ւ</div>
+                        <div class="key" data-char="պ">պ</div>
+                        <div class="key" data-char="ն">ն</div>
+                        <div class="key" data-char="մ">մ</div>
+                        <div class="key" data-char="շ">շ</div>
+                        <div class="key" data-char="ղ">ղ</div>
+                        <div class="key" data-char="ծ">ծ</div>
+                    </div>
+                
+                    <div class="keyboard-row">
+                        <div class="key" data-char=" " style="width: 250px">Space</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progressive Practice Section with Letter Progress -->
+<div id="progressivePractice" class="content">
+    <h2>Progressive Practice</h2>
+    <div class="level-info">Level: <span id="currentLevel">1</span> - Learning: <span id="currentLetters">աս</span></div>
+    <p id="levelExplanation" style="text-align: center; color: #555; font-style: italic; margin-bottom: 15px;"></p>
+    
+    <div class="options-panel">
+        <div class="option-group">
+            <label for="practiceWordCount">Word Count:</label>
+            <input type="number" id="practiceWordCount" min="1" max="20" value="10">
+        </div>
+        <div class="option-group">
+            <input type="checkbox" id="practiceLowercaseOption">
+            <label for="practiceLowercaseOption">Lowercase Only</label>
+        </div>
+    </div>
+    
+    <!-- Letter-specific progress indicator -->
+    <div id="letterProgressPanel" class="letter-progress-panel">
+        <div class="current-letter-container">
+            <div class="current-letter">
+                <span id="currentLetterDisplay"></span>
+            </div>
+            <div class="letter-stats">
+                <div class="letter-stat">
+                    <div class="stat-label">Letter WPM:</div>
+                    <div id="letterWpm" class="stat-value">0</div>
+                </div>
+                <div class="letter-stat">
+                    <div class="stat-label">Letter Accuracy:</div>
+                    <div id="letterAccuracy" class="stat-value">0%</div>
+                </div>
+            </div>
+        </div>
+        <div class="letter-progress-container">
+            <div class="letter-progress-label">Letter Progress:</div>
+            <div class="letter-progress-bar-container">
+                <div id="letterProgressBar" class="letter-progress-bar" style="width: 0%">0%</div>
+            </div>
+            <div class="letter-progress-target">Target: <span id="targetWpmDisplay">20</span> WPM</div>
+        </div>
+    </div>
+    
+    <div id="practiceText"></div>
+    <input type="text" id="practiceInput" placeholder="Start typing here..." autocomplete="off">
+    <button id="newPracticeBtn" class="button">New Practice</button>
+    <button id="resetPracticeBtn" class="button">Reset</button>
+    
+    <div class="metrics">
+        <div class="metric">
+            <h3>Overall WPM</h3>
+            <p id="practiceWpm">0</p>
+        </div>
+        <div class="metric">
+            <h3>Overall Accuracy</h3>
+            <p id="practiceAccuracy">0%</p>
+        </div>
+        <div class="metric">
+            <h3>Level Progress</h3>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar" style="width: 0%">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="keyboard-container">
+        <p class="keyboard-title">Western Armenian Legacy Keyboard Layout</p>
+        <div class="keyboard">
+            <div class="keyboard-row">
+                <div class="key" data-char="՝">՝</div>
+                <div class="key" data-char=":">:</div>
+                <div class="key" data-char="ձ">ձ</div>
+                <div class="key" data-char="յ">յ</div>
+                <div class="key" data-char="՛">՛</div>
+                <div class="key" data-char=",">,</div>
+                <div class="key" data-char="-">-</div>
+                <div class="key" data-char=".">.</div>
+                <div class="key" data-char="«">«</div>
+                <div class="key" data-char="»">»</div>
+                <div class="key" data-char="օ">օ</div>
+                <div class="key" data-char="ռ">ռ</div>
+                <div class="key" data-char="ժ">ժ</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key" data-char="խ">խ</div>
+                <div class="key" data-char="վ">վ</div>
+                <div class="key" data-char="է">է</div>
+                <div class="key" data-char="ր">ր</div>
+                <div class="key" data-char="դ">դ</div>
+                <div class="key" data-char="ե">ե</div>
+                <div class="key" data-char="ը">ը</div>
+                <div class="key" data-char="ի">ի</div>
+                <div class="key" data-char="ո">ո</div>
+                <div class="key" data-char="բ">բ</div>
+                <div class="key" data-char="չ">չ</div>
+                <div class="key" data-char="ջ">ջ</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key home-row" data-char="ա">ա</div>
+                <div class="key home-row" data-char="ս">ս</div>
+                <div class="key home-row" data-char="տ">տ</div>
+                <div class="key home-row" data-char="ֆ">ֆ</div>
+                <div class="key home-row" data-char="կ">կ</div>
+                <div class="key home-row" data-char="հ">հ</div>
+                <div class="key home-row" data-char="ճ">ճ</div>
+                <div class="key home-row" data-char="ք">ք</div>
+                <div class="key home-row" data-char="լ">լ</div>
+                <div class="key home-row" data-char="թ">թ</div>
+                <div class="key" data-char="փ">փ</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key" data-char="զ">զ</div>
+                <div class="key" data-char="ց">ց</div>
+                <div class="key" data-char="գ">գ</div>
+                <div class="key" data-char="ւ">ւ</div>
+                <div class="key" data-char="պ">պ</div>
+                <div class="key" data-char="ն">ն</div>
+                <div class="key" data-char="մ">մ</div>
+                <div class="key" data-char="շ">շ</div>
+                <div class="key" data-char="ղ">ղ</div>
+                <div class="key" data-char="ծ">ծ</div>
+            </div>
+        
+            <div class="keyboard-row">
+                <div class="key" data-char=" " style="width: 250px">Space</div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Advanced Letter Statistics Panel -->
+<div id="letterStatsPanel" class="letter-stats-panel">
+    <div class="letter-stats-header">
+      <h3>Letter Performance Analytics</h3>
+      <button id="toggleLetterStats" class="toggle-stats-button">Show Details</button>
+    </div>
+    
+    <div id="letterStatsDetails" class="letter-stats-details">
+      <div class="stats-row">
+        <div class="stat-block">
+          <div class="stat-label">Frequency</div>
+          <div id="letterFrequency" class="stat-value">0%</div>
+          <div class="stat-description">How often this letter appears in your text</div>
+        </div>
+        
+        <div class="stat-block">
+          <div class="stat-label">Typed Correctly</div>
+          <div id="letterCorrectCount" class="stat-value">0/0</div>
+          <div class="stat-description">How many instances you've typed correctly</div>
+        </div>
+        
+        <div class="stat-block">
+          <div class="stat-label">Speed Factor</div>
+          <div id="letterSpeedFactor" class="stat-value">1.0×</div>
+          <div class="stat-description">How your speed with this letter compares to your overall speed</div>
+        </div>
+      </div>
+      
+      <div class="stats-chart-container">
+        <h4>WPM Progress</h4>
+        <div class="letter-progress-chart">
+          <div class="chart-line"></div>
+          <div class="target-line" id="targetWpmLine"></div>
+          <div class="progress-point current-point" id="currentWpmPoint"></div>
+        </div>
+        <div class="chart-labels">
+          <span>0</span>
+          <span id="midPointWpm">20</span>
+          <span id="maxPointWpm">40</span>
+        </div>
+      </div>
+      
+      <div class="improvement-tips">
+        <h4>Improvement Tips</h4>
+        <ul id="letterTips">
+          <li>Practice will increase your speed with this letter</li>
+          <li>Focus on accuracy first, then speed will follow</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Letter Heatmap Visual -->
+  <div id="letterHeatmap" class="letter-heatmap">
+    <h4>Letter Performance</h4>
+    <div class="heatmap-container">
+      <!-- Will be dynamically populated with letter cells -->
+    </div>
+    <div class="heatmap-legend">
+      <span class="legend-item"><span class="legend-color" style="background-color: #ef5350;"></span>Needs Work</span>
+      <span class="legend-item"><span class="legend-color" style="background-color: #ffca28;"></span>Improving</span>
+      <span class="legend-item"><span class="legend-color" style="background-color: #66bb6a;"></span>Good</span>
+    </div>
+  </div>
+        
+        <!-- Settings Section -->
+        <div id="settings" class="content">
+            <h2>Settings</h2>
+            
+            <div class="settings-panel">
+                <div class="setting-group">
+                    <h3>Progressive Practice Settings</h3>
+                    <div class="setting-item">
+                        <label for="targetWPM">Target WPM for level advancement:</label>
+                        <input type="number" id="targetWPM" min="5" max="100" value="20">
+                    </div>
+                    <p class="setting-description">
+                        This WPM target will be used to determine when you can advance to the next letter.
+                        You need to achieve this WPM with at least 90% accuracy.
+                    </p>
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Word List Management</h3>
+                    <div class="setting-item">
+                        <button id="exportWordListBtn" class="button">Export Word List</button>
+                        <button id="importWordListBtn" class="button">Import Word List</button>
+                    </div>
+                    <p class="setting-description">
+                        Export the current word list to a file that you can edit with additional words.
+                        Import a modified word list file to use your own custom words.
+                    </p>
+                    <input type="file" id="wordListFileInput" style="display: none;" accept=".js,.json">
+                </div>
+                
+                <div class="setting-group">
+                    <h3>Keyboard Progression</h3>
+                    <p>Letters will be unlocked in the following order:</p>
+                    <div class="letter-progression">
+                        <div class="letter-group">
+                            <h4>Initial Letters:</h4>
+                            <div class="letters">է ն ի ա ր լ</div>
+                        </div>
+                        <div class="letter-group">
+                            <h4>Middle Letters:</h4>
+                            <div class="letters">դ ո ս ը տ ե գ կ հ բ մ ք պ վ ֆ զ ւ ց խ ճ</div>
+                        </div>
+                        <div class="letter-group">
+                            <h4>Final Letters:</h4>
+                            <div class="letters">յ ձ օ ռ ժ չ ջ թ փ շ ղ ծ</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="saveSettingsBtn" class="button">Save Settings</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Modal -->
+    <div id="resultsModal" class="modal">
+        <div class="modal-content">
+            <h2>Typing Results</h2>
+            <div class="modal-stats">
+                <div class="modal-stat">
+                    <h3>WPM</h3>
+                    <p id="modalWpm">0</p>
+                </div>
+                <div class="modal-stat">
+                    <h3>Accuracy</h3>
+                    <p id="modalAccuracy">0%</p>
+                </div>
+                <div class="modal-stat">
+                    <h3>Time</h3>
+                    <p id="modalTime">0s</p>
+                </div>
+            </div>
+            <button id="nextTestBtn" class="modal-button">Start Next Test</button>
+        </div>
+    </div>
+
+    <script src="wordlist.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
