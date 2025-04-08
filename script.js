@@ -84,6 +84,16 @@ let practiceTimerInterval = null;
 let elapsedTime = 0;
 let practiceElapsedTime = 0;
 
+// Letter-specific tracking variables
+let letterTimings = {}; // Track timings for each letter
+let letterWpmStats = {}; // Store WPM for each letter
+let currentLetterStartTime = null; // When a focus letter becomes the next letter to type
+let letterOccurrences = {}; // Count occurrences of each letter
+let letterCorrectCount = {}; // Count correctly typed instances of each letter
+let expectedNextLetter = ''; // The next letter the user should type
+let focusLetter = ''; // The letter being learned in the current level
+let letterPerformanceHistory = {}; // Track performance history for each letter
+
 // DOM Elements - Typing Test
 const textToTypeDiv = document.getElementById('textToType');
 const typingInput = document.getElementById('typingInput');
@@ -104,6 +114,25 @@ const progressBar = document.getElementById('progressBar');
 const currentLevelDisplay = document.getElementById('currentLevel');
 const currentLettersDisplay = document.getElementById('currentLetters');
 const keyElements = document.querySelectorAll('.key');
+
+// Letter-specific DOM elements
+const letterWpmDisplay = document.getElementById('letterWpm');
+const letterAccuracyDisplay = document.getElementById('letterAccuracy');
+const letterProgressBar = document.getElementById('letterProgressBar');
+const currentLetterDisplay = document.getElementById('currentLetterDisplay');
+const letterProgressPanel = document.getElementById('letterProgressPanel');
+const targetWpmDisplay = document.getElementById('targetWpmDisplay');
+const letterFrequencyDisplay = document.getElementById('letterFrequency');
+const letterCorrectCountDisplay = document.getElementById('letterCorrectCount');
+const letterSpeedFactorDisplay = document.getElementById('letterSpeedFactor');
+const currentWpmPoint = document.getElementById('currentWpmPoint');
+const targetWpmLine = document.getElementById('targetWpmLine');
+const midPointWpmDisplay = document.getElementById('midPointWpm');
+const maxPointWpmDisplay = document.getElementById('maxPointWpm');
+const letterTipsDisplay = document.getElementById('letterTips');
+const letterHeatmapContainer = document.querySelector('.heatmap-container');
+const letterStatsDetailsPanel = document.getElementById('letterStatsDetails');
+const toggleLetterStatsButton = document.getElementById('toggleLetterStats');
 
 // Tab navigation
 const tabs = document.querySelectorAll('.tab');
@@ -164,10 +193,54 @@ function initProgressivePractice() {
     updateProgressBar(0);
     updateKeyboardHighlighting();
     
+    // Reset letter tracking for new practice session
+    resetLetterTracking();
+    
+    // Initialize letter stats display
+    updateLetterStats();
+    
+    // Update letter heatmap
+    updateLetterHeatmap();
+    
     // Display level explanation
     const explanationElement = document.getElementById('levelExplanation');
     if (explanationElement) {
         explanationElement.textContent = getExplanationText();
+    }
+}
+
+// Reset letter tracking variables
+function resetLetterTracking() {
+    focusLetter = levels[currentLevel].newLetter;
+    letterTimings = {};
+    letterOccurrences = {};
+    letterCorrectCount = {};
+    expectedNextLetter = '';
+    currentLetterStartTime = null;
+    
+    // Initialize stats for current focus letter if it exists
+    if (focusLetter) {
+        if (!letterWpmStats[focusLetter]) {
+            letterWpmStats[focusLetter] = {
+                wpm: 0,
+                accuracy: 0,
+                totalTime: 0,
+                totalOccurrences: 0,
+                correctOccurrences: 0
+            };
+        }
+        
+        if (!letterPerformanceHistory[focusLetter]) {
+            letterPerformanceHistory[focusLetter] = [];
+        }
+        
+        // Show letter progress panel only if we have a focus letter
+        letterProgressPanel.classList.remove('hide-letter-progress');
+        currentLetterDisplay.textContent = focusLetter;
+        targetWpmDisplay.textContent = targetWPM;
+    } else {
+        // Hide letter progress panel for level 0
+        letterProgressPanel.classList.add('hide-letter-progress');
     }
 }
 
@@ -443,6 +516,11 @@ function displayText(container, text) {
                 }
             });
         }
+        
+        // Initialize expectedNextLetter to the first character
+        if (text.length > 0) {
+            expectedNextLetter = text[0];
+        }
     }
 }
 
@@ -472,6 +550,22 @@ function updateCharacterHighlighting(typed, container) {
             }
         } else if (i === typed.length) {
             chars[i].classList.add('current');
+            
+            // Update expectedNextLetter
+            if (i < chars.length) {
+                expectedNextLetter = chars[i].textContent;
+                
+                // If the expected next letter is our focus letter, start timing it
+                if (focusLetter && expectedNextLetter.toLowerCase() === focusLetter.toLowerCase() && isPracticing) {
+                    if (!letterTimings[i]) {
+                        currentLetterStartTime = new Date().getTime();
+                        letterTimings[i] = { startTime: currentLetterStartTime, endTime: null };
+                        
+                        // Increment occurrence counter for this letter
+                        letterOccurrences[focusLetter] = (letterOccurrences[focusLetter] || 0) + 1;
+                    }
+                }
+            }
         }
     }
 }
@@ -480,6 +574,12 @@ function updateCharacterHighlighting(typed, container) {
 function updateProgressBar(progress) {
     progressBar.style.width = progress + '%';
     progressBar.textContent = progress + '%';
+}
+
+// Update letter progress bar
+function updateLetterProgressBar(progress) {
+    letterProgressBar.style.width = progress + '%';
+    letterProgressBar.textContent = progress + '%';
 }
 
 // Update level info
@@ -596,9 +696,186 @@ function updatePracticeMetrics() {
     const progress = Math.min(100, Math.round((wpm / requiredWpm) * 100));
     updateProgressBar(progress);
     
+    // Calculate and update letter-specific metrics
+    updateLetterStats();
+    
     // Check if completed
     if (typedText.length >= currentPracticeText.length) {
         checkLevelCompletion(wpm, accuracy);
+    }
+}
+
+// Process letter WPM calculation
+function processLetterTyped(typedChar, expectedChar, position) {
+    // Check if there's a focus letter for this level
+    if (!focusLetter) return;
+    
+    // If the expected letter is our focus letter and we have a timing started for it
+    if (expectedChar.toLowerCase() === focusLetter.toLowerCase() && letterTimings[position]) {
+        // Record end time
+        const endTime = new Date().getTime();
+        letterTimings[position].endTime = endTime;
+        
+        // Calculate time taken to type this letter (in seconds)
+        const timeTaken = (endTime - letterTimings[position].startTime) / 1000;
+        
+        // Check if the letter was typed correctly
+        const isCorrect = typedChar === expectedChar;
+        
+        // Update correct count for this letter
+        if (isCorrect) {
+            letterCorrectCount[focusLetter] = (letterCorrectCount[focusLetter] || 0) + 1;
+        }
+        
+        // Update letter stats
+        if (letterWpmStats[focusLetter]) {
+            // Only include correctly typed letters
+            if (isCorrect) {
+                // A single character is 1/5 of a word. Convert to WPM for this single action
+                // wpm = (1/5) / (timeTaken / 60) = 12 / timeTaken
+                const instantWpm = Math.round(12 / timeTaken);
+                
+                // Update stats
+                letterWpmStats[focusLetter].totalTime += timeTaken;
+                letterWpmStats[focusLetter].totalOccurrences++;
+                letterWpmStats[focusLetter].correctOccurrences += isCorrect ? 1 : 0;
+                
+                // Calculate average WPM for this letter
+                if (letterWpmStats[focusLetter].totalOccurrences > 0) {
+                    const avgTimeTaken = letterWpmStats[focusLetter].totalTime / letterWpmStats[focusLetter].totalOccurrences;
+                    letterWpmStats[focusLetter].wpm = Math.round(12 / avgTimeTaken);
+                    letterWpmStats[focusLetter].accuracy = Math.round((letterWpmStats[focusLetter].correctOccurrences / letterWpmStats[focusLetter].totalOccurrences) * 100);
+                }
+                
+                // Add to performance history (for graphs/charts)
+                letterPerformanceHistory[focusLetter].push({
+                    timestamp: new Date().getTime(),
+                    wpm: instantWpm,
+                    isCorrect: isCorrect
+                });
+            }
+        }
+    }
+}
+
+// Update letter stats display
+function updateLetterStats() {
+    // If there's no focus letter, return
+    if (!focusLetter) return;
+    
+    // Get stats for the current focus letter
+    const stats = letterWpmStats[focusLetter] || { wpm: 0, accuracy: 0, totalOccurrences: 0, correctOccurrences: 0 };
+    
+    // Update letter-specific metrics displays
+    letterWpmDisplay.textContent = stats.wpm || 0;
+    letterAccuracyDisplay.textContent = (stats.accuracy || 0) + '%';
+    
+    // Calculate letter progress as percentage of target WPM
+    const letterProgress = Math.min(100, Math.round((stats.wpm / targetWPM) * 100)) || 0;
+    updateLetterProgressBar(letterProgress);
+    
+    // Update detailed stats if they exist
+    if (letterFrequencyDisplay) {
+        const totalChars = practiceInput.value.length;
+        const letterFrequency = totalChars > 0 ? Math.round((letterOccurrences[focusLetter] || 0) / totalChars * 100) : 0;
+        letterFrequencyDisplay.textContent = letterFrequency + '%';
+    }
+    
+    if (letterCorrectCountDisplay) {
+        letterCorrectCountDisplay.textContent = `${letterCorrectCount[focusLetter] || 0}/${letterOccurrences[focusLetter] || 0}`;
+    }
+    
+    if (letterSpeedFactorDisplay) {
+        // Calculate the speed factor - how this letter compares to overall typing speed
+        const overallWpm = parseInt(practiceWpmDisplay.textContent) || 1;
+        const letterWpm = stats.wpm || 1;
+        const speedFactor = (letterWpm / overallWpm).toFixed(1);
+        letterSpeedFactorDisplay.textContent = speedFactor + 'x';
+    }
+    
+    // Update WPM progress chart
+    if (currentWpmPoint && targetWpmLine) {
+        const maxWpm = Math.max(targetWPM * 2, stats.wpm);
+        const wpmPercentage = Math.min(100, (stats.wpm / maxWpm) * 100);
+        
+        currentWpmPoint.style.left = wpmPercentage + '%';
+        targetWpmLine.style.left = (targetWPM / maxWpm) * 100 + '%';
+        
+        // Update scale labels
+        if (midPointWpmDisplay) midPointWpmDisplay.textContent = Math.round(maxWpm / 2);
+        if (maxPointWpmDisplay) maxPointWpmDisplay.textContent = maxWpm;
+    }
+    
+    // Update improvement tips
+    if (letterTipsDisplay) {
+        const tips = [];
+        
+        if (stats.wpm < targetWPM * 0.5) {
+            tips.push('Focus on consistent typing rhythm for this letter');
+            tips.push('Try typing short words containing this letter repeatedly');
+        } else if (stats.wpm < targetWPM * 0.8) {
+            tips.push('You\'re improving! Keep practicing to build muscle memory');
+            tips.push('Focus on accuracy first, then gradually increase speed');
+        } else if (stats.wpm < targetWPM) {
+            tips.push('Almost there! Try typing slightly faster while maintaining accuracy');
+            tips.push('You\'re very close to mastering this letter');
+        } else {
+            tips.push('Great job! You\'ve reached the target speed for this letter');
+            tips.push('Try to maintain this performance consistently');
+        }
+        
+        // Update the tips display
+        letterTipsDisplay.innerHTML = tips.map(tip => `<li>${tip}</li>`).join('');
+    }
+}
+
+// Update letter heatmap
+function updateLetterHeatmap() {
+    // If letterHeatmapContainer doesn't exist, return
+    if (!letterHeatmapContainer) return;
+    
+    // Clear existing content
+    letterHeatmapContainer.innerHTML = '';
+    
+    // Get all available letters
+    const availableLetters = levels[currentLevel].letters;
+    
+    // Create a cell for each letter
+    for (let i = 0; i < availableLetters.length; i++) {
+        const letter = availableLetters[i];
+        const stats = letterWpmStats[letter] || { wpm: 0, accuracy: 0 };
+        
+        // Create letter cell
+        const letterCell = document.createElement('div');
+        letterCell.className = 'heatmap-letter';
+        letterCell.textContent = letter;
+        letterCell.setAttribute('data-wpm', stats.wpm || 0);
+        
+        // Add performance class based on WPM
+        if (letter === levels[currentLevel].newLetter) {
+            // Focus letter
+            if (stats.wpm < targetWPM * 0.5) {
+                letterCell.classList.add('needs-work');
+            } else if (stats.wpm < targetWPM) {
+                letterCell.classList.add('improving');
+            } else {
+                letterCell.classList.add('good');
+            }
+        } else if (i > availableLetters.indexOf(levels[currentLevel].newLetter)) {
+            // Letters that are not yet unlocked
+            letterCell.classList.add('not-learned');
+        } else {
+            // Previously learned letters
+            if (stats.wpm < targetWPM * 0.5) {
+                letterCell.classList.add('needs-work');
+            } else if (stats.wpm < targetWPM) {
+                letterCell.classList.add('improving');
+            } else {
+                letterCell.classList.add('good');
+            }
+        }
+        
+        letterHeatmapContainer.appendChild(letterCell);
     }
 }
 
@@ -607,9 +884,23 @@ function checkLevelCompletion(wpm, accuracy) {
     clearInterval(practiceTimerInterval);
     isPracticing = false;
     
+    // Get the focus letter WPM and accuracy
+    const focusLetter = levels[currentLevel].newLetter;
+    let letterWpm = 0;
+    let letterAccuracy = 0;
+    
+    if (focusLetter && letterWpmStats[focusLetter]) {
+        letterWpm = letterWpmStats[focusLetter].wpm || 0;
+        letterAccuracy = letterWpmStats[focusLetter].accuracy || 0;
+    } else {
+        // If no focus letter (level 0) or no stats, use overall metrics
+        letterWpm = wpm;
+        letterAccuracy = accuracy;
+    }
+    
     const requiredWpm = levels[currentLevel].wpmRequired;
     
-    if (wpm >= requiredWpm && accuracy >= 90) {
+    if (letterWpm >= requiredWpm && letterAccuracy >= 90) {
         if (currentLevel < levels.length - 1) {
             currentLevel++;
             setTimeout(() => {
@@ -624,7 +915,7 @@ function checkLevelCompletion(wpm, accuracy) {
         }
     } else {
         setTimeout(() => {
-            alert(`You need at least ${requiredWpm} WPM with 90% accuracy to advance. Try again!`);
+            alert(`You need at least ${requiredWpm} WPM with 90% accuracy on the letter "${focusLetter}" to advance. Try again!`);
             initProgressivePractice();
         }, 500);
     }
@@ -682,12 +973,30 @@ typingInput.addEventListener('input', () => {
 });
 
 // Practice Input
-practiceInput.addEventListener('input', () => {
+practiceInput.addEventListener('input', (e) => {
     if (!isPracticing) {
         isPracticing = true;
         practiceStartTime = new Date().getTime();
         practiceTimerInterval = setInterval(updatePracticeMetrics, 100);
     }
+    
+    const typedText = practiceInput.value;
+    const typedLength = typedText.length;
+    
+    // If a character was added (not deleted)
+    if (typedLength > 0 && e.inputType !== 'deleteContentBackward') {
+        const typedChar = typedText[typedLength - 1];
+        const position = typedLength - 1;
+        
+        // If we have an expected character at this position
+        if (position < currentPracticeText.length) {
+            const expectedChar = currentPracticeText[position];
+            
+            // Process letter-specific timing
+            processLetterTyped(typedChar, expectedChar, position);
+        }
+    }
+    
     updatePracticeMetrics();
     
     // Highlight key pressed
@@ -701,6 +1010,19 @@ practiceInput.addEventListener('input', () => {
 typingInput.addEventListener('keypress', (e) => {
     highlightKey(e.key);
 });
+
+// Toggle letter stats details
+if (toggleLetterStatsButton && letterStatsDetailsPanel) {
+    toggleLetterStatsButton.addEventListener('click', () => {
+        if (letterStatsDetailsPanel.classList.contains('active')) {
+            letterStatsDetailsPanel.classList.remove('active');
+            toggleLetterStatsButton.textContent = 'Show Details';
+        } else {
+            letterStatsDetailsPanel.classList.add('active');
+            toggleLetterStatsButton.textContent = 'Hide Details';
+        }
+    });
+}
 
 // New Test Button
 newTestBtn.addEventListener('click', initTypingTest);
@@ -734,6 +1056,74 @@ window.addEventListener('keydown', (e) => {
         } else if (document.getElementById('progressivePractice').classList.contains('active')) {
             initProgressivePractice();
         }
+    }
+});
+
+// Handle word list file import/export
+document.getElementById('exportWordListBtn').addEventListener('click', () => {
+    // Create a data URL for the wordlist
+    const wordListData = JSON.stringify(westernArmenianWordList, null, 2);
+    const blob = new Blob([`const westernArmenianWordList = ${wordListData};`], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a temporary link and trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'armenian_wordlist.js';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+document.getElementById('importWordListBtn').addEventListener('click', () => {
+    // Trigger the hidden file input
+    document.getElementById('wordListFileInput').click();
+});
+
+document.getElementById('wordListFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                // Parse the file content and update the wordlist
+                const fileContent = event.target.result;
+                // Use Function constructor to safely evaluate the JS content
+                new Function(fileContent)();
+                
+                // Refresh word lists from the updated global variable
+                if (typeof westernArmenianWordList !== 'undefined') {
+                    // Rebuild the all array
+                    westernArmenianWordList.all = [];
+                    
+                    // Add words from each category
+                    const addWords = (sourceArray) => {
+                        if (Array.isArray(sourceArray)) {
+                            for (const word of sourceArray) {
+                                if (!westernArmenianWordList.all.includes(word)) {
+                                    westernArmenianWordList.all.push(word);
+                                }
+                            }
+                        }
+                    };
+                    
+                    addWords(westernArmenianWordList.easy);
+                    addWords(westernArmenianWordList.medium);
+                    addWords(westernArmenianWordList.hard);
+                    addWords(westernArmenianWordList.initialOnly);
+                    
+                    alert('Word list successfully imported!');
+                    initTypingTest();
+                    initProgressivePractice();
+                } else {
+                    alert('Invalid word list file. Please make sure it contains a westernArmenianWordList object.');
+                }
+            } catch (error) {
+                alert('Error importing word list: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
     }
 });
 
